@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>台股當沖 - 關鍵停利停損價位快速對照</title>
+  <style>
+    :root {
+      --up-color: #e53935;
+      --down-color: #43a047;
+      --bg-color: #f4f6f9;
+      --card-bg: #ffffff;
+      --primary-color: #1a237e;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg-color);
+      color: #333;
+      margin: 0;
+      padding: 15px;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 15px;
+      color: var(--primary-color);
+      font-size: 1.4rem;
+    }
+    .card {
+      background: var(--card-bg);
+      border-radius: 10px;
+      padding: 15px 20px;
+      margin-bottom: 15px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+    .form-group label {
+      font-size: 0.85rem;
+      margin-bottom: 4px;
+      font-weight: bold;
+      color: #555;
+    }
+    .form-group input, .form-group select {
+      padding: 8px 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 0.95rem;
+    }
+
+    /* 動態進場列 */
+    .entries-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .entry-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .entry-row input {
+      flex: 1;
+      padding: 6px 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 0.95rem;
+    }
+    .btn {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 0.85rem;
+    }
+    .btn-add { background-color: #2196f3; color: white; }
+    .btn-del { background-color: #ef5350; color: white; padding: 6px 10px; }
+
+    /* 資訊摘要列 */
+    .summary-bar {
+      background-color: #e8eaf6;
+      border-radius: 6px;
+      padding: 10px;
+      margin-top: 10px;
+      display: flex;
+      justify-content: space-around;
+      text-align: center;
+    }
+    .summary-item .title { font-size: 0.75rem; color: #666; }
+    .summary-item .value { font-size: 1.05rem; font-weight: bold; color: var(--primary-color); }
+
+    /* 關鍵卡片網格 */
+    .section-title {
+      font-size: 1rem;
+      font-weight: bold;
+      margin-bottom: 10px;
+      padding-left: 8px;
+      border-left: 4px solid #1a237e;
+    }
+    .result-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .res-card {
+      border-radius: 8px;
+      padding: 12px;
+      text-align: center;
+      border: 1px solid #e0e0e0;
+      background-color: #fafafa;
+    }
+    .res-card.loss {
+      background-color: #fbe9e7;
+      border-color: #ffccbc;
+    }
+    .res-card.profit {
+      background-color: #e8f5e9;
+      border-color: #c8e6c9;
+    }
+    .res-card .label {
+      font-size: 0.85rem;
+      font-weight: bold;
+      color: #555;
+      margin-bottom: 4px;
+    }
+    .res-card.loss .label { color: var(--down-color); }
+    .res-card.profit .label { color: var(--up-color); }
+    
+    .res-card .price {
+      font-size: 1.5rem;
+      font-weight: bold;
+      margin: 4px 0;
+    }
+    .res-card.loss .price { color: var(--down-color); }
+    .res-card.profit .price { color: var(--up-color); }
+
+    .res-card .sub-info {
+      font-size: 0.75rem;
+      color: #666;
+    }
+
+    .breakeven-box {
+      background-color: #f3e5f5;
+      border: 1px solid #e1bee7;
+      border-radius: 8px;
+      padding: 10px;
+      text-align: center;
+      margin-bottom: 12px;
+    }
+    .breakeven-box .title { font-size: 0.85rem; color: #4a148c; font-weight: bold; }
+    .breakeven-box .price { font-size: 1.3rem; color: #4a148c; font-weight: bold; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h2>台股當沖 - 關鍵價位速查</h2>
+
+  <!-- 1. 進場設定 -->
+  <div class="card">
+    <div class="entries-header">
+      <span style="font-weight:bold; font-size:0.95rem;">分批進場紀錄</span>
+      <button class="btn btn-add" onclick="addEntryRow()">➕ 新增進場</button>
+    </div>
+
+    <div id="entriesContainer">
+      <div class="entry-row">
+        <input type="number" class="entry-price" value="100" step="0.01" min="0.01" placeholder="價格" oninput="calculate()">
+        <input type="number" class="entry-shares" value="1" min="1" placeholder="張數" oninput="calculate()">
+        <button class="btn btn-del" onclick="removeEntryRow(this)">✕</button>
+      </div>
+    </div>
+
+    <div class="summary-bar">
+      <div class="summary-item">
+        <div class="title">總張數</div>
+        <div class="value" id="summaryShares">0 張</div>
+      </div>
+      <div class="summary-item">
+        <div class="title">平均成本</div>
+        <div class="value" id="summaryAvgPrice">0.00 元</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. 交易參數 -->
+  <div class="card">
+    <div class="form-grid">
+      <div class="form-group">
+        <label for="action">交易方向</label>
+        <select id="action" onchange="calculate()">
+          <option value="long">做多 (先買後賣)</option>
+          <option value="short">做空 (先賣後買)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="discount">手續費折扣 (折)</label>
+        <input type="number" id="discount" value="2.8" step="0.1" min="0" max="10" oninput="calculate()">
+      </div>
+      <div class="form-group" style="grid-column: span 2;">
+        <label for="stopTicks">預設停損基準 (退幾檔算風險)</label>
+        <input type="number" id="stopTicks" value="1" min="1" max="10" oninput="calculate()">
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. 精簡結果顯示區 -->
+  <div class="card">
+    <!-- 兩平價位 -->
+    <div class="breakeven-box">
+      <div class="title">淨損益兩平出場價</div>
+      <div class="price" id="breakevenPrice">0.00 元</div>
+    </div>
+
+    <!-- 虧損金額價位 -->
+    <div class="section-title">🛑 關鍵停損價位 (固定虧損額)</div>
+    <div class="result-grid" style="margin-bottom: 15px;">
+      <div class="res-card loss">
+        <div class="label">虧損達 $5,000 價位</div>
+        <div class="price" id="loss5kPrice">--</div>
+        <div class="sub-info" id="loss5kDetail">預估淨虧: -$0</div>
+      </div>
+      <div class="res-card loss">
+        <div class="label">虧損達 $10,000 價位</div>
+        <div class="price" id="loss10kPrice">--</div>
+        <div class="sub-info" id="loss10kDetail">預估淨虧: -$0</div>
+      </div>
+    </div>
+
+    <!-- 盈虧比價位 -->
+    <div class="section-title">🎯 目標停利價位 (基於退 <span id="stopTicksLabel">1</span> 檔停損風險)</div>
+    <div class="result-grid">
+      <div class="res-card profit">
+        <div class="label">盈虧比 1 : 2 停利價</div>
+        <div class="price" id="rr2Price">--</div>
+        <div class="sub-info" id="rr2Detail">預估淨利: +$0</div>
+      </div>
+      <div class="res-card profit">
+        <div class="label">盈虧比 1 : 3 停利價</div>
+        <div class="price" id="rr3Price">--</div>
+        <div class="sub-info" id="rr3Detail">預估淨利: +$0</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function addEntryRow() {
+    const container = document.getElementById('entriesContainer');
+    const div = document.createElement('div');
+    div.className = 'entry-row';
+    div.innerHTML = `
+      <input type="number" class="entry-price" value="100" step="0.01" min="0.01" placeholder="價格" oninput="calculate()">
+      <input type="number" class="entry-shares" value="1" min="1" placeholder="張數" oninput="calculate()">
+      <button class="btn btn-del" onclick="removeEntryRow(this)">✕</button>
+    `;
+    container.appendChild(div);
+    calculate();
+  }
+
+  function removeEntryRow(btn) {
+    const rows = document.querySelectorAll('.entry-row');
+    if (rows.length > 1) {
+      btn.parentElement.remove();
+      calculate();
+    }
+  }
+
+  function getTickSize(price) {
+    if (price < 10) return 0.01;
+    if (price < 50) return 0.05;
+    if (price < 100) return 0.1;
+    if (price < 500) return 0.5;
+    if (price < 1000) return 1.0;
+    return 5.0;
+  }
+
+  function getPriceBySteps(basePrice, steps) {
+    let price = basePrice;
+    const direction = steps > 0 ? 1 : -1;
+    const count = Math.abs(steps);
+
+    for (let i = 0; i < count; i++) {
+      let tick = getTickSize(price);
+      if (direction === -1) {
+        if ([10, 50, 100, 500, 1000].includes(Number(price.toFixed(2)))) {
+          tick = getTickSize(price - 0.01);
+        }
+      }
+      price += direction * tick;
+      price = Math.round(price * 100) / 100;
+    }
+    return price;
+  }
+
+  function calculateNetProfit(action, avgEntryPrice, exitPrice, totalShares, discountRatio) {
+    const baseFeeRate = 0.001425;
+    const taxRate = 0.0015;
+    const borrowFeeRate = 0.0008;
+
+    let buyPrice, sellPrice;
+    if (action === 'long') {
+      buyPrice = avgEntryPrice;
+      sellPrice = exitPrice;
+    } else {
+      buyPrice = exitPrice;
+      sellPrice = avgEntryPrice;
+    }
+
+    const buyAmount = buyPrice * totalShares;
+    const sellAmount = sellPrice * totalShares;
+
+    let buyFee = Math.floor(buyAmount * baseFeeRate * discountRatio);
+    if (buyFee < 20) buyFee = 20;
+
+    let sellFee = Math.floor(sellAmount * baseFeeRate * discountRatio);
+    if (sellFee < 20) sellFee = 20;
+
+    const totalFee = buyFee + sellFee;
+
+    let taxAndBorrowFee = 0;
+    if (action === 'long') {
+      taxAndBorrowFee = Math.floor(sellAmount * taxRate);
+    } else {
+      taxAndBorrowFee = Math.floor(sellAmount * taxRate) + Math.floor(sellAmount * borrowFeeRate);
+    }
+
+    const rawProfit = sellAmount - buyAmount;
+    const netProfit = rawProfit - totalFee - taxAndBorrowFee;
+
+    return netProfit;
+  }
+
+  function calculate() {
+    const action = document.getElementById('action').value;
+    const discountRatio = (parseFloat(document.getElementById('discount').value) || 10) / 10;
+    const stopTicks = parseInt(document.getElementById('stopTicks').value) || 1;
+    document.getElementById('stopTicksLabel').innerText = stopTicks;
+
+    // 1. 計算平均成本
+    const priceInputs = document.querySelectorAll('.entry-price');
+    const sharesInputs = document.querySelectorAll('.entry-shares');
+
+    let totalSharesNum = 0;
+    let totalCostAmount = 0;
+
+    for (let i = 0; i < priceInputs.length; i++) {
+      const p = parseFloat(priceInputs[i].value) || 0;
+      const s = parseInt(sharesInputs[i].value) || 0;
+      if (p > 0 && s > 0) {
+        totalSharesNum += s;
+        totalCostAmount += p * (s * 1000);
+      }
+    }
+
+    const totalShares = totalSharesNum * 1000;
+    const avgEntryPrice = totalShares > 0 ? (totalCostAmount / totalShares) : 0;
+
+    document.getElementById('summaryShares').innerText = `${totalSharesNum} 張`;
+    document.getElementById('summaryAvgPrice').innerText = `${avgEntryPrice.toFixed(2)} 元`;
+
+    if (avgEntryPrice <= 0 || totalShares <= 0) return;
+
+    // 2. 尋找損益兩平價位
+    let beStep = 0;
+    while (beStep < 100 && beStep > -100) {
+      const testPrice = getPriceBySteps(avgEntryPrice, action === 'long' ? beStep : -beStep);
+      const profit = calculateNetProfit(action, avgEntryPrice, testPrice, totalShares, discountRatio);
+      if (profit >= 0) {
+        document.getElementById('breakevenPrice').innerText = `${testPrice.toFixed(2)} 元`;
+        break;
+      }
+      beStep++;
+    }
+
+    // 3. 尋找虧損超過 5000 及 10000 的第一檔價格
+    let loss5kPrice = null, loss5kVal = 0;
+    let loss10kPrice = null, loss10kVal = 0;
+
+    let step = 1;
+    while (step <= 200) {
+      const exitStep = action === 'long' ? -step : step;
+      const testPrice = getPriceBySteps(avgEntryPrice, exitStep);
+      const profit = calculateNetProfit(action, avgEntryPrice, testPrice, totalShares, discountRatio);
+
+      if (profit <= -5000 && !loss5kPrice) {
+        loss5kPrice = testPrice;
+        loss5kVal = profit;
+      }
+      if (profit <= -10000 && !loss10kPrice) {
+        loss10kPrice = testPrice;
+        loss10kVal = profit;
+        break; // 找到 10000 即可停止搜尋
+      }
+      step++;
+    }
+
+    document.getElementById('loss5kPrice').innerText = loss5kPrice ? `${loss5kPrice.toFixed(2)} 元` : '超出範圍';
+    document.getElementById('loss5kDetail').innerText = loss5kPrice ? `實際淨虧: -$${Math.abs(loss5kVal).toLocaleString()}` : '';
+
+    document.getElementById('loss10kPrice').innerText = loss10kPrice ? `${loss10kPrice.toFixed(2)} 元` : '超出範圍';
+    document.getElementById('loss10kDetail').innerText = loss10kPrice ? `實際淨虧: -$${Math.abs(loss10kVal).toLocaleString()}` : '';
+
+    // 4. 計算預設退 N 檔停損的風險金額，並尋找 1:2 與 1:3 停利檔位
+    const stopStep = action === 'long' ? -stopTicks : stopTicks;
+    const stopPrice = getPriceBySteps(avgEntryPrice, stopStep);
+    const riskAmount = Math.abs(calculateNetProfit(action, avgEntryPrice, stopPrice, totalShares, discountRatio));
+
+    let rr2Price = null, rr2Val = 0;
+    let rr3Price = null, rr3Val = 0;
+
+    step = 1;
+    while (step <= 200) {
+      const exitStep = action === 'long' ? step : -step;
+      const testPrice = getPriceBySteps(avgEntryPrice, exitStep);
+      const profit = calculateNetProfit(action, avgEntryPrice, testPrice, totalShares, discountRatio);
+
+      if (profit >= riskAmount * 2 && !rr2Price) {
+        rr2Price = testPrice;
+        rr2Val = profit;
+      }
+      if (profit >= riskAmount * 3 && !rr3Price) {
+        rr3Price = testPrice;
+        rr3Val = profit;
+        break;
+      }
+      step++;
+    }
+
+    document.getElementById('rr2Price').innerText = rr2Price ? `${rr2Price.toFixed(2)} 元` : '超出範圍';
+    document.getElementById('rr2Detail').innerText = rr2Price ? `實際淨利: +$${rr2Val.toLocaleString()}` : '';
+
+    document.getElementById('rr3Price').innerText = rr3Price ? `${rr3Price.toFixed(2)} 元` : '超出範圍';
+    document.getElementById('rr3Detail').innerText = rr3Price ? `實際淨利: +$${rr3Val.toLocaleString()}` : '';
+  }
+
+  calculate();
+</script>
+
+</body>
+</html>
